@@ -4,9 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>🎡 Wheel of Fortune</title>
-    <script crossorigin src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/react.min.js"></script>
-    <script crossorigin src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/react-dom.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.5/babel.min.js"></script>
     <style>
         * {
             margin: 0;
@@ -24,334 +21,356 @@
             padding: 20px;
         }
         
-        #root {
-            width: 100%;
+        .container {
             max-width: 600px;
+            width: 100%;
+            background: #f8f9fa;
+            border-radius: 12px;
+            padding: 30px 20px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+        }
+        
+        h1 {
+            text-align: center;
+            font-size: 28px;
+            margin-bottom: 30px;
+            color: #333;
+            font-weight: 600;
+        }
+        
+        .wheel-container {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 30px;
+            padding: 20px;
+            background: #fff;
+            border-radius: 12px;
+        }
+        
+        canvas {
+            max-width: 100%;
+            height: auto;
+            display: block;
+        }
+        
+        .spin-button {
+            width: 100%;
+            padding: 16px;
+            font-size: 18px;
+            font-weight: bold;
+            color: #fff;
+            background-color: #FF6B6B;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 12px rgba(255, 107, 107, 0.4);
+        }
+        
+        .spin-button:hover:not(:disabled) {
+            background-color: #ff5252;
+            transform: translateY(-2px);
+        }
+        
+        .spin-button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+        
+        .result-box {
+            background: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            text-align: center;
+            margin-bottom: 20px;
+            border: 2px solid #FF6B6B;
+            display: none;
+        }
+        
+        .result-box.show {
+            display: block;
+        }
+        
+        .result-label {
+            font-size: 14px;
+            color: #666;
+            margin: 0 0 8px 0;
+        }
+        
+        .result-text {
+            font-size: 24px;
+            font-weight: bold;
+            color: #FF6B6B;
+            margin: 0;
+        }
+        
+        .items-section {
+            background: #fff;
+            padding: 20px;
+            border-radius: 8px;
+        }
+        
+        .section-title {
+            font-size: 18px;
+            margin-top: 0;
+            margin-bottom: 15px;
+            color: #333;
+            font-weight: 600;
+        }
+        
+        .input-container {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+        
+        input[type="text"] {
+            flex: 1;
+            padding: 10px 12px;
+            font-size: 14px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-family: inherit;
+        }
+        
+        .add-button {
+            padding: 10px 16px;
+            font-size: 14px;
+            font-weight: 600;
+            color: #fff;
+            background-color: #4ECDC4;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        
+        .add-button:hover {
+            background-color: #3ab5a8;
+        }
+        
+        .items-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+        
+        .item-tag {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 12px;
+            background: #f0f0f0;
+            border-radius: 20px;
+            font-size: 14px;
+            color: #333;
+        }
+        
+        .remove-button {
+            background: none;
+            border: none;
+            font-size: 20px;
+            color: #999;
+            cursor: pointer;
+            padding: 0;
+            margin-left: 4px;
+            line-height: 1;
+        }
+        
+        .remove-button:hover {
+            color: #ff5252;
         }
     </style>
 </head>
 <body>
-    <div id="root"></div>
-    
-    <script type="text/babel">
-        const WheelOfFortune = () => {
-          const [items, setItems] = React.useState([
-            'Option 1',
-            'Option 2',
-            'Option 3',
-            'Option 4',
-            'Option 5',
-          ]);
-          const [inputValue, setInputValue] = React.useState('');
-          const [isSpinning, setIsSpinning] = React.useState(false);
-          const [rotation, setRotation] = React.useState(0);
-          const [selectedItem, setSelectedItem] = React.useState(null);
-          const canvasRef = React.useRef(null);
-          const wheelRadius = 150;
-          const spinDuration = 3;
-
-          const handleAddItem = () => {
-            if (inputValue.trim()) {
-              setItems([...items, inputValue.trim()]);
-              setInputValue('');
-            }
-          };
-
-          const handleRemoveItem = (index) => {
-            setItems(items.filter((_, i) => i !== index));
-          };
-
-          React.useEffect(() => {
-            const canvas = canvasRef.current;
-            if (!canvas) return;
-
-            const ctx = canvas.getContext('2d');
-            const centerX = canvas.width / 2;
-            const centerY = canvas.height / 2;
-
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-            ctx.save();
-            ctx.translate(centerX, centerY);
-            ctx.rotate((rotation * Math.PI) / 180);
-
-            const sliceAngle = 360 / items.length;
-            const colors = [
-              '#FF6B6B', '#4ECDC4', '#45B7D1', '#FFA07A', '#98D8C8',
-              '#F7DC6F', '#BB8FCE', '#85C1E2', '#F8B739', '#52C9A8',
-            ];
-
-            items.forEach((item, index) => {
-              const startAngle = (index * sliceAngle - 90) * (Math.PI / 180);
-              const endAngle = ((index + 1) * sliceAngle - 90) * (Math.PI / 180);
-
-              ctx.beginPath();
-              ctx.arc(0, 0, wheelRadius, startAngle, endAngle);
-              ctx.lineTo(0, 0);
-              ctx.fillStyle = colors[index % colors.length];
-              ctx.fill();
-
-              ctx.strokeStyle = '#ffffff';
-              ctx.lineWidth = 2;
-              ctx.stroke();
-
-              ctx.save();
-              ctx.rotate(startAngle + sliceAngle * (Math.PI / 180) / 2);
-              ctx.textAlign = 'right';
-              ctx.fillStyle = '#ffffff';
-              ctx.font = 'bold 14px Arial';
-              ctx.shadowColor = 'rgba(0,0,0,0.5)';
-              ctx.shadowBlur = 4;
-
-              const textRadius = wheelRadius - 40;
-              ctx.fillText(item, textRadius, 5);
-              ctx.restore();
-            });
-
-            ctx.beginPath();
-            ctx.arc(0, 0, 20, 0, 2 * Math.PI);
-            ctx.fillStyle = '#333';
-            ctx.fill();
-            ctx.strokeStyle = '#fff';
-            ctx.lineWidth = 2;
-            ctx.stroke();
-
-            ctx.restore();
-
-            ctx.fillStyle = '#333';
-            ctx.beginPath();
-            ctx.moveTo(centerX, centerY - wheelRadius - 15);
-            ctx.lineTo(centerX - 10, centerY - wheelRadius);
-            ctx.lineTo(centerX + 10, centerY - wheelRadius);
-            ctx.fill();
-          }, [items, rotation]);
-
-          const handleSpin = () => {
-            if (isSpinning || items.length === 0) return;
-
-            setIsSpinning(true);
-            const spinAmount = Math.random() * 360 + 720;
-            const newRotation = (rotation + spinAmount) % 360;
-
-            const startTime = Date.now();
-            const animate = () => {
-              const elapsed = (Date.now() - startTime) / 1000;
-              const progress = Math.min(elapsed / spinDuration, 1);
-
-              const easeOut = 1 - Math.pow(1 - progress, 3);
-              const currentRotation = (rotation + spinAmount * easeOut) % 360;
-              setRotation(currentRotation);
-
-              if (progress < 1) {
-                requestAnimationFrame(animate);
-              } else {
-                setRotation(newRotation);
-                setIsSpinning(false);
-
-                const normalizedRotation = (360 - (newRotation % 360)) % 360;
-                const sliceAngle = 360 / items.length;
-                const winnerIndex = Math.floor(normalizedRotation / sliceAngle) % items.length;
-                setSelectedItem(items[winnerIndex]);
-              }
-            };
-
-            requestAnimationFrame(animate);
-          };
-
-          return (
-            <div style={styles.container}>
-              <h1 style={styles.title}>🎡 Wheel of Fortune</h1>
-
-              <div style={styles.wheelContainer}>
-                <canvas
-                  ref={canvasRef}
-                  width={400}
-                  height={400}
-                  style={styles.canvas}
-                />
-              </div>
-
-              <button
-                onClick={handleSpin}
-                disabled={isSpinning || items.length === 0}
-                style={{
-                  ...styles.spinButton,
-                  opacity: isSpinning || items.length === 0 ? 0.6 : 1,
-                  cursor: isSpinning || items.length === 0 ? 'not-allowed' : 'pointer',
-                }}
-              >
-                {isSpinning ? 'SPINNING...' : 'SPIN THE WHEEL'}
-              </button>
-
-              {selectedItem && !isSpinning && (
-                <div style={styles.resultBox}>
-                  <p style={styles.resultLabel}>🎉 Winner:</p>
-                  <p style={styles.resultText}>{selectedItem}</p>
-                </div>
-              )}
-
-              <div style={styles.itemsSection}>
-                <h2 style={styles.sectionTitle}>Wheel Items</h2>
-
-                <div style={styles.inputContainer}>
-                  <input
-                    type="text"
-                    value={inputValue}
-                    onChange={(e) => setInputValue(e.target.value)}
-                    onKeyPress={(e) => e.key === 'Enter' && handleAddItem()}
-                    placeholder="Add new item..."
-                    style={styles.input}
-                  />
-                  <button onClick={handleAddItem} style={styles.addButton}>
-                    Add Item
-                  </button>
-                </div>
-
-                <div style={styles.itemsList}>
-                  {items.map((item, index) => (
-                    <div key={index} style={styles.itemTag}>
-                      <span>{item}</span>
-                      <button
-                        onClick={() => handleRemoveItem(index)}
-                        style={styles.removeButton}
-                      >
-                        ×
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              </div>
+    <div class="container">
+        <h1>🎡 Wheel of Fortune</h1>
+        
+        <div class="wheel-container">
+            <canvas id="wheelCanvas" width="400" height="400"></canvas>
+        </div>
+        
+        <button class="spin-button" id="spinButton">SPIN THE WHEEL</button>
+        
+        <div class="result-box" id="resultBox">
+            <p class="result-label">🎉 Winner:</p>
+            <p class="result-text" id="resultText"></p>
+        </div>
+        
+        <div class="items-section">
+            <h2 class="section-title">Wheel Items</h2>
+            
+            <div class="input-container">
+                <input type="text" id="itemInput" placeholder="Add new item..." />
+                <button class="add-button" id="addButton">Add Item</button>
             </div>
-          );
-        };
+            
+            <div class="items-list" id="itemsList"></div>
+        </div>
+    </div>
 
-        const styles = {
-          container: {
-            maxWidth: '600px',
-            margin: '0 auto',
-            padding: '30px 20px',
-            fontFamily: "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif",
-            backgroundColor: '#f8f9fa',
-            borderRadius: '12px',
-            boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
-          },
-          title: {
-            textAlign: 'center',
-            fontSize: '28px',
-            marginBottom: '30px',
-            color: '#333',
-            fontWeight: '600',
-          },
-          wheelContainer: {
-            display: 'flex',
-            justifyContent: 'center',
-            marginBottom: '30px',
-            padding: '20px',
-            backgroundColor: '#fff',
-            borderRadius: '12px',
-          },
-          canvas: {
-            maxWidth: '100%',
-            height: 'auto',
-          },
-          spinButton: {
-            width: '100%',
-            padding: '16px',
-            fontSize: '18px',
-            fontWeight: 'bold',
-            color: '#fff',
-            backgroundColor: '#FF6B6B',
-            border: 'none',
-            borderRadius: '8px',
-            cursor: 'pointer',
-            transition: 'background-color 0.3s, transform 0.1s',
-            marginBottom: '20px',
-            boxShadow: '0 4px 12px rgba(255, 107, 107, 0.4)',
-          },
-          resultBox: {
-            backgroundColor: '#fff',
-            padding: '20px',
-            borderRadius: '8px',
-            textAlign: 'center',
-            marginBottom: '20px',
-            border: '2px solid #FF6B6B',
-            animation: 'fadeIn 0.5s ease-in',
-          },
-          resultLabel: {
-            fontSize: '14px',
-            color: '#666',
-            margin: '0 0 8px 0',
-          },
-          resultText: {
-            fontSize: '24px',
-            fontWeight: 'bold',
-            color: '#FF6B6B',
-            margin: '0',
-          },
-          itemsSection: {
-            backgroundColor: '#fff',
-            padding: '20px',
-            borderRadius: '8px',
-          },
-          sectionTitle: {
-            fontSize: '18px',
-            marginTop: '0',
-            marginBottom: '15px',
-            color: '#333',
-            fontWeight: '600',
-          },
-          inputContainer: {
-            display: 'flex',
-            gap: '10px',
-            marginBottom: '15px',
-          },
-          input: {
-            flex: 1,
-            padding: '10px 12px',
-            fontSize: '14px',
-            border: '1px solid #ddd',
-            borderRadius: '6px',
-            fontFamily: 'inherit',
-          },
-          addButton: {
-            padding: '10px 16px',
-            fontSize: '14px',
-            fontWeight: '600',
-            color: '#fff',
-            backgroundColor: '#4ECDC4',
-            border: 'none',
-            borderRadius: '6px',
-            cursor: 'pointer',
-            transition: 'background-color 0.3s',
-          },
-          itemsList: {
-            display: 'flex',
-            flexWrap: 'wrap',
-            gap: '8px',
-          },
-          itemTag: {
-            display: 'flex',
-            alignItems: 'center',
-            gap: '8px',
-            padding: '8px 12px',
-            backgroundColor: '#f0f0f0',
-            borderRadius: '20px',
-            fontSize: '14px',
-            color: '#333',
-          },
-          removeButton: {
-            background: 'none',
-            border: 'none',
-            fontSize: '20px',
-            color: '#999',
-            cursor: 'pointer',
-            padding: '0',
-            marginLeft: '4px',
-          },
-        };
-
-        const root = ReactDOM.createRoot(document.getElementById('root'));
-        root.render(<WheelOfFortune />);
+    <script>
+        class WheelOfFortune {
+            constructor() {
+                this.items = ['Option 1', 'Option 2', 'Option 3', 'Option 4', 'Option 5'];
+                this.isSpinning = false;
+                this.rotation = 0;
+                this.wheelRadius = 150;
+                this.spinDuration = 3;
+                
+                this.canvas = document.getElementById('wheelCanvas');
+                this.ctx = this.canvas.getContext('2d');
+                this.spinButton = document.getElementById('spinButton');
+                this.itemInput = document.getElementById('itemInput');
+                this.addButton = document.getElementById('addButton');
+                this.itemsList = document.getElementById('itemsList');
+                this.resultBox = document.getElementById('resultBox');
+                this.resultText = document.getElementById('resultText');
+                
+                this.init();
+            }
+            
+            init() {
+                this.spinButton.addEventListener('click', () => this.spin());
+                this.addButton.addEventListener('click', () => this.addItem());
+                this.itemInput.addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter') this.addItem();
+                });
+                
+                this.render();
+                this.updateItemsList();
+            }
+            
+            addItem() {
+                const value = this.itemInput.value.trim();
+                if (value) {
+                    this.items.push(value);
+                    this.itemInput.value = '';
+                    this.render();
+                    this.updateItemsList();
+                    this.resultBox.classList.remove('show');
+                }
+            }
+            
+            removeItem(index) {
+                this.items.splice(index, 1);
+                this.render();
+                this.updateItemsList();
+                this.resultBox.classList.remove('show');
+            }
+            
+            updateItemsList() {
+                this.itemsList.innerHTML = this.items.map((item, index) => `
+                    <div class="item-tag">
+                        <span>${item}</span>
+                        <button class="remove-button" onclick="wheel.removeItem(${index})">×</button>
+                    </div>
+                `).join('');
+            }
+            
+            render() {
+                const centerX = this.canvas.width / 2;
+                const centerY = this.canvas.height / 2;
+                
+                this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+                this.ctx.save();
+                this.ctx.translate(centerX, centerY);
+                this.ctx.rotate((this.rotation * Math.PI) / 180);
+                
+                const sliceAngle = 360 / this.items.length;
+                const colors = [
+                    '#FF6B6B', '#4ECDC4', '#45B7D1', '#FFA07A', '#98D8C8',
+                    '#F7DC6F', '#BB8FCE', '#85C1E2', '#F8B739', '#52C9A8',
+                ];
+                
+                this.items.forEach((item, index) => {
+                    const startAngle = (index * sliceAngle - 90) * (Math.PI / 180);
+                    const endAngle = ((index + 1) * sliceAngle - 90) * (Math.PI / 180);
+                    
+                    this.ctx.beginPath();
+                    this.ctx.arc(0, 0, this.wheelRadius, startAngle, endAngle);
+                    this.ctx.lineTo(0, 0);
+                    this.ctx.fillStyle = colors[index % colors.length];
+                    this.ctx.fill();
+                    
+                    this.ctx.strokeStyle = '#ffffff';
+                    this.ctx.lineWidth = 2;
+                    this.ctx.stroke();
+                    
+                    this.ctx.save();
+                    this.ctx.rotate(startAngle + sliceAngle * (Math.PI / 180) / 2);
+                    this.ctx.textAlign = 'right';
+                    this.ctx.fillStyle = '#ffffff';
+                    this.ctx.font = 'bold 14px Arial';
+                    this.ctx.shadowColor = 'rgba(0,0,0,0.5)';
+                    this.ctx.shadowBlur = 4;
+                    
+                    const textRadius = this.wheelRadius - 40;
+                    this.ctx.fillText(item, textRadius, 5);
+                    this.ctx.restore();
+                });
+                
+                this.ctx.beginPath();
+                this.ctx.arc(0, 0, 20, 0, 2 * Math.PI);
+                this.ctx.fillStyle = '#333';
+                this.ctx.fill();
+                this.ctx.strokeStyle = '#fff';
+                this.ctx.lineWidth = 2;
+                this.ctx.stroke();
+                
+                this.ctx.restore();
+                
+                this.ctx.fillStyle = '#333';
+                this.ctx.beginPath();
+                this.ctx.moveTo(centerX, centerY - this.wheelRadius - 15);
+                this.ctx.lineTo(centerX - 10, centerY - this.wheelRadius);
+                this.ctx.lineTo(centerX + 10, centerY - this.wheelRadius);
+                this.ctx.fill();
+            }
+            
+            spin() {
+                if (this.isSpinning || this.items.length === 0) return;
+                
+                this.isSpinning = true;
+                this.spinButton.disabled = true;
+                this.resultBox.classList.remove('show');
+                
+                const spinAmount = Math.random() * 360 + 720;
+                const newRotation = (this.rotation + spinAmount) % 360;
+                
+                const startTime = Date.now();
+                const animate = () => {
+                    const elapsed = (Date.now() - startTime) / 1000;
+                    const progress = Math.min(elapsed / this.spinDuration, 1);
+                    
+                    const easeOut = 1 - Math.pow(1 - progress, 3);
+                    const currentRotation = (this.rotation + spinAmount * easeOut) % 360;
+                    this.rotation = currentRotation;
+                    this.render();
+                    
+                    if (progress < 1) {
+                        requestAnimationFrame(animate);
+                    } else {
+                        this.rotation = newRotation;
+                        this.render();
+                        this.isSpinning = false;
+                        this.spinButton.disabled = false;
+                        
+                        const normalizedRotation = (360 - (newRotation % 360)) % 360;
+                        const sliceAngle = 360 / this.items.length;
+                        const winnerIndex = Math.floor(normalizedRotation / sliceAngle) % this.items.length;
+                        
+                        this.resultText.textContent = this.items[winnerIndex];
+                        this.resultBox.classList.add('show');
+                    }
+                };
+                
+                requestAnimationFrame(animate);
+            }
+        }
+        
+        const wheel = new WheelOfFortune();
     </script>
 </body>
 </html>
